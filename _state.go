@@ -14,9 +14,6 @@ import (
 
 	"github.com/yuin/gopher-lua/parse"
 )
-
-const MultRet = -1
-const RegistryIndex = -10000
 const EnvironIndex = -10001
 const GlobalsIndex = -10002
 
