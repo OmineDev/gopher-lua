@@ -223,6 +223,7 @@ type LState struct {
 	rhook        Hooker
 	cthook       Hooker
 	prevline     int
+	ctxCancelFn  context.CancelFunc
 }
 
 func (ls *LState) String() string                     { return fmt.Sprintf("thread: %p", ls) }
