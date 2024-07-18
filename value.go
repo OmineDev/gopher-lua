@@ -194,11 +194,6 @@ type LState struct {
 	hasErrorFunc bool
 	mainLoop     func(*LState, *callFrame)
 	ctx          context.Context
-	lhook        Hooker
-	chook        Hooker
-	rhook        Hooker
-	cthook       Hooker
-	prevline     int
 	ctxCancelFn  context.CancelFunc
 	lhook        Hooker
 	chook        Hooker
