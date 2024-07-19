@@ -77,6 +77,11 @@ func coResume(L *LState) int {
 		L.XMoveTo(th, nargs)
 	}
 	top := L.GetTop()
+	th.lhook = L.lhook
+	th.rhook = L.rhook
+	th.chook = L.chook
+	th.cthook = L.cthook
+	th.prevline = L.prevline
 	threadRun(th)
 	return L.GetTop() - top
 }

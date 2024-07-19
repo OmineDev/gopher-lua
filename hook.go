@@ -49,7 +49,7 @@ func newCTHook(callback *LFunction, count int) *CTHook {
 
 func (ct *CTHook) call(L *LState, cf *callFrame) {
 	ct.currentCount++
-	if ct.currentCount == ct.count {
+	if cf != nil && ct.currentCount == ct.count {
 		L.reg.Push(ct.callback)
 		L.reg.Push(LString("count"))
 		L.callR(1, 0, -1)
@@ -72,7 +72,7 @@ func newCHook(callback *LFunction) *CHook {
 }
 
 func (ch *CHook) call(L *LState, cf *callFrame) {
-	if ch.callback != cf.Fn {
+	if cf != nil && ch.callback != cf.Fn {
 		L.reg.Push(ch.callback)
 		L.reg.Push(LString("call"))
 		L.callR(1, 0, -1)
@@ -94,7 +94,7 @@ func newRHook(callback *LFunction) *RHook {
 }
 
 func (rh *RHook) call(L *LState, cf *callFrame) {
-	if rh.callback != cf.Fn {
+	if cf != nil && rh.callback != cf.Fn {
 		L.reg.Push(rh.callback)
 		L.reg.Push(LString("return"))
 		L.callR(1, 0, -1)
