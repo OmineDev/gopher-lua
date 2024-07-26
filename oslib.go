@@ -79,23 +79,25 @@ func osDiffTime(L *LState) int {
 }
 
 func osExecute(L *LState) int {
-	var procAttr os.ProcAttr
-	procAttr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
-	cmd, args := popenArgs(L.CheckString(1))
-	args = append([]string{cmd}, args...)
-	process, err := os.StartProcess(cmd, args, &procAttr)
-	if err != nil {
-		L.Push(LNumber(1))
-		return 1
-	}
+	panic("execute is not supported")
+	return 0
+	// var procAttr os.ProcAttr
+	// procAttr.Files = []*os.File{os.Stdin, os.Stdout, os.Stderr}
+	// cmd, args := popenArgs(L.CheckString(1))
+	// args = append([]string{cmd}, args...)
+	// process, err := os.StartProcess(cmd, args, &procAttr)
+	// if err != nil {
+	// 	L.Push(LNumber(1))
+	// 	return 1
+	// }
 
-	ps, err := process.Wait()
-	if err != nil || !ps.Success() {
-		L.Push(LNumber(1))
-		return 1
-	}
-	L.Push(LNumber(0))
-	return 1
+	// ps, err := process.Wait()
+	// if err != nil || !ps.Success() {
+	// 	L.Push(LNumber(1))
+	// 	return 1
+	// }
+	// L.Push(LNumber(0))
+	// return 1
 }
 
 func osExit(L *LState) int {
