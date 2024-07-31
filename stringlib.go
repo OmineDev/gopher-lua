@@ -340,7 +340,8 @@ func strGmatch(L *LState) int {
 
 func strLen(L *LState) int {
 	str := L.CheckString(1)
-	L.Push(LNumber(len(str)))
+	len := len([]rune(str))
+	L.Push(LNumber(len))
 	return 1
 }
 
@@ -415,11 +416,11 @@ func strSub(L *LState) int {
 	str := L.CheckString(1)
 	start := luaIndex2StringIndex(str, L.CheckInt(2), true)
 	end := luaIndex2StringIndex(str, L.OptInt(3, -1), false)
-	l := len(str)
+	l := len([]rune(str))
 	if start >= l || end < start {
 		L.Push(emptyLString)
 	} else {
-		L.Push(LString(str[start:end]))
+		L.Push(LString(([]rune(str))[start:end]))
 	}
 	return 1
 }
@@ -434,7 +435,7 @@ func luaIndex2StringIndex(str string, i int, start bool) int {
 	if start && i != 0 {
 		i -= 1
 	}
-	l := len(str)
+	l := len([]rune(str))
 	if i < 0 {
 		i = l + i + 1
 	}
