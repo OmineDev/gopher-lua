@@ -41,10 +41,11 @@ var strFuncs = map[string]LGFunction{
 }
 
 func strByte(L *LState) int {
-	str := L.CheckString(1)
+	_str := L.CheckString(1)
+	runes := []rune(_str)
 	start := L.OptInt(2, 1) - 1
 	end := L.OptInt(3, -1)
-	l := len(str)
+	l := len(runes)
 	if start < 0 {
 		start = l + start + 1
 	}
@@ -56,7 +57,7 @@ func strByte(L *LState) int {
 		if start < 0 || start >= l {
 			return 0
 		}
-		L.Push(LNumber(str[start]))
+		L.Push(LNumber(runes[start]))
 		return 1
 	}
 
@@ -67,16 +68,16 @@ func strByte(L *LState) int {
 	}
 
 	for i := start; i < end; i++ {
-		L.Push(LNumber(str[i]))
+		L.Push(LNumber(runes[i]))
 	}
 	return end - start
 }
 
 func strChar(L *LState) int {
 	top := L.GetTop()
-	bytes := make([]byte, L.GetTop())
+	bytes := make([]rune, L.GetTop())
 	for i := 1; i <= top; i++ {
-		bytes[i-1] = uint8(L.CheckInt(i))
+		bytes[i-1] = rune(L.CheckInt(i))
 	}
 	L.Push(LString(string(bytes)))
 	return 1
@@ -87,32 +88,43 @@ func strDump(L *LState) int {
 	return 0
 }
 
+func runesIndex(rs []rune, subRunes []rune) int {
+	srs := string(rs)
+	si := strings.Index(srs, string(subRunes))
+	if si == -1 {
+		return -1
+	}
+	return len([]rune(srs[:si]))
+}
+
 func strFind(L *LState) int {
-	str := L.CheckString(1)
-	pattern := L.CheckString(2)
-	if len(pattern) == 0 {
+	_str := L.CheckString(1)
+	str_pattern := L.CheckString(2)
+	if len(str_pattern) == 0 {
 		L.Push(LNumber(1))
 		L.Push(LNumber(0))
 		return 2
 	}
-	init := luaIndex2StringIndex(str, L.OptInt(3, 1), true)
+	runes := []rune(_str)
+	runes_pattern := []rune(str_pattern)
+	init := luaIndex2RuneIndex(runes, L.OptInt(3, 1), true)
 	plain := false
 	if L.GetTop() == 4 {
 		plain = LVAsBool(L.Get(4))
 	}
 
 	if plain {
-		pos := strings.Index(str[init:], pattern)
+		pos := runesIndex(runes[init:], runes_pattern)
 		if pos < 0 {
 			L.Push(LNil)
 			return 1
 		}
 		L.Push(LNumber(init+pos) + 1)
-		L.Push(LNumber(init + pos + len(pattern)))
+		L.Push(LNumber(init + pos + len(runes_pattern)))
 		return 2
 	}
 
-	mds, err := pm.Find(pattern, unsafeFastStringToReadOnlyBytes(str), init, 1)
+	mds, err := pm.FindRunes(str_pattern, runes, init, 1)
 	if err != nil {
 		L.RaiseError(err.Error())
 	}
@@ -127,7 +139,7 @@ func strFind(L *LState) int {
 		if md.IsPosCapture(i) {
 			L.Push(LNumber(md.Capture(i)))
 		} else {
-			L.Push(LString(str[md.Capture(i):md.Capture(i+1)]))
+			L.Push(LString(runes[md.Capture(i):md.Capture(i+1)]))
 		}
 	}
 	return md.CaptureLength()/2 + 1
@@ -352,19 +364,19 @@ func strLower(L *LState) int {
 }
 
 func strMatch(L *LState) int {
-	str := L.CheckString(1)
-	pattern := L.CheckString(2)
+	_str := L.CheckString(1)
+	str_pattern := L.CheckString(2)
 	offset := L.OptInt(3, 1)
-	l := len(str)
+	runes := []rune(_str)
 	if offset < 0 {
-		offset = l + offset + 1
+		offset = len(runes) + offset + 1
 	}
 	offset--
 	if offset < 0 {
 		offset = 0
 	}
 
-	mds, err := pm.Find(pattern, unsafeFastStringToReadOnlyBytes(str), offset, 1)
+	mds, err := pm.FindRunes(str_pattern, runes, offset, 1)
 	if err != nil {
 		L.RaiseError(err.Error())
 	}
@@ -376,14 +388,14 @@ func strMatch(L *LState) int {
 	nsubs := md.CaptureLength() / 2
 	switch nsubs {
 	case 1:
-		L.Push(LString(str[md.Capture(0):md.Capture(1)]))
+		L.Push(LString(runes[md.Capture(0):md.Capture(1)]))
 		return 1
 	default:
 		for i := 2; i < md.CaptureLength(); i += 2 {
 			if md.IsPosCapture(i) {
 				L.Push(LNumber(md.Capture(i)))
 			} else {
-				L.Push(LString(str[md.Capture(i):md.Capture(i+1)]))
+				L.Push(LString(runes[md.Capture(i):md.Capture(i+1)]))
 			}
 		}
 		return nsubs - 1
@@ -403,8 +415,8 @@ func strRep(L *LState) int {
 
 func strReverse(L *LState) int {
 	str := L.CheckString(1)
-	bts := []byte(str)
-	out := make([]byte, len(bts))
+	bts := []rune(str)
+	out := make([]rune, len(bts))
 	for i, j := 0, len(bts)-1; j >= 0; i, j = i+1, j-1 {
 		out[i] = bts[j]
 	}
@@ -414,13 +426,14 @@ func strReverse(L *LState) int {
 
 func strSub(L *LState) int {
 	str := L.CheckString(1)
-	start := luaIndex2StringIndex(str, L.CheckInt(2), true)
-	end := luaIndex2StringIndex(str, L.OptInt(3, -1), false)
-	l := len([]rune(str))
+	runes := []rune(str)
+	start := luaIndex2RuneIndex(runes, L.CheckInt(2), true)
+	end := luaIndex2RuneIndex(runes, L.OptInt(3, -1), false)
+	l := len(runes)
 	if start >= l || end < start {
 		L.Push(emptyLString)
 	} else {
-		L.Push(LString(([]rune(str))[start:end]))
+		L.Push(LString(runes[start:end]))
 	}
 	return 1
 }
@@ -431,11 +444,11 @@ func strUpper(L *LState) int {
 	return 1
 }
 
-func luaIndex2StringIndex(str string, i int, start bool) int {
+func luaIndex2RuneIndex(runes []rune, i int, start bool) int {
 	if start && i != 0 {
 		i -= 1
 	}
-	l := len([]rune(str))
+	l := len(runes)
 	if i < 0 {
 		i = l + i + 1
 	}

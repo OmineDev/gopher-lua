@@ -635,4 +635,20 @@ func Find(p string, src []byte, offset, limit int) (matches []*MatchData, err er
 	return
 }
 
+func FindRunes(p string, src []rune, offset, limit int) (matches []*MatchData, err error) {
+	s := string(src)
+	offset = len(string(src[:offset]))
+	ms, err := Find(p, []byte(s), offset, limit)
+	for i, m := range ms {
+		cs := m.captures
+		for j, c := range cs {
+			cs[j] = (uint32(len([]rune(s[:c>>1]))) << 1) | (c & 1)
+		}
+		ms[i] = &MatchData{
+			captures: cs,
+		}
+	}
+	return ms, err
+}
+
 /* }}} */
