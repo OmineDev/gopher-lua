@@ -926,7 +926,7 @@ func init() {
 				{
 					rg := reg
 					regi := RA
-					vali := LNumber(len(lv))
+					vali := LNumber(len([]rune(lv)))
 					newSize := regi + 1
 					// this section is inlined by go-inline
 					// source function is 'func (rg *registry) checkSize(requiredSize int) ' in '_state.go'
