@@ -309,7 +309,7 @@ type varNamePool struct {
 }
 
 func newVarNamePool(offset int) *varNamePool {
-	return &varNamePool{make([]string, 0, 16), make([]int, 0, 16), offset}
+	return &varNamePool{make([]string, 0, 4), make([]int, 0, 4), offset}
 }
 
 func (vp *varNamePool) Names() []string {
@@ -425,7 +425,7 @@ type funcContext struct {
 func newFuncContext(sourcename string, parent *funcContext) *funcContext {
 	fc := &funcContext{
 		Proto:           newFunctionProto(sourcename),
-		Code:            &codeStore{make([]uint32, 0, 1024), make([]int, 0, 1024), 0},
+		Code:            &codeStore{make([]uint32, 0, 8), make([]int, 0, 8), 0},
 		Parent:          parent,
 		Upvalues:        newVarNamePool(0),
 		Block:           newCodeBlock(newVarNamePool(0), labelNoJump, nil, nil, 0),
@@ -1360,7 +1360,16 @@ func compileFunctionExpr(context *funcContext, funcexpr *ast.FunctionExpr, ec *e
 		}
 		context.Proto.stringConstants = append(context.Proto.stringConstants, sv)
 	}
+	// patchCode mutates context.Code (and therefore Proto.Code, currently
+	// re-sliced from it) in place, so it must run before we copy. Copy
+	// afterwards instead of keeping the re-slice: context.Code's backing
+	// arrays are grown via append and typically end up with spare capacity
+	// (up to 2x what's used), which would otherwise be retained for the
+	// lifetime of the compiled FunctionProto for every function, however
+	// small.
 	patchCode(context)
+	context.Proto.Code = append([]uint32(nil), context.Proto.Code...)
+	context.Proto.DbgSourcePositions = append([]int(nil), context.Proto.DbgSourcePositions...)
 } // }}}
 
 func compileTableExpr(context *funcContext, reg int, ex *ast.TableExpr, ec *expcontext) { // {{{

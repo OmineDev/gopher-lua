@@ -89,23 +89,26 @@ func UpvalueIndex(i int) int {
 
 func newFunctionProto(name string) *FunctionProto {
 	return &FunctionProto{
-		SourceName:         name,
-		LineDefined:        0,
-		LastLineDefined:    0,
-		NumUpvalues:        0,
-		NumParameters:      0,
-		IsVarArg:           0,
-		NumUsedRegisters:   2,
-		Code:               make([]uint32, 0, 128),
-		Constants:          make([]LValue, 0, 32),
-		FunctionPrototypes: make([]*FunctionProto, 0, 16),
+		SourceName:       name,
+		LineDefined:      0,
+		LastLineDefined:  0,
+		NumUpvalues:      0,
+		NumParameters:    0,
+		IsVarArg:         0,
+		NumUsedRegisters: 2,
+		// Code and DbgSourcePositions are overwritten with right-sized
+		// copies once compilation finishes (see compile.go); these initial
+		// slices only exist to be discarded, so keep them minimal.
+		Code:               make([]uint32, 0, 8),
+		Constants:          make([]LValue, 0, 8),
+		FunctionPrototypes: make([]*FunctionProto, 0, 2),
 
-		DbgSourcePositions: make([]int, 0, 128),
-		DbgLocals:          make([]*DbgLocalInfo, 0, 16),
-		DbgCalls:           make([]DbgCall, 0, 128),
-		DbgUpvalues:        make([]string, 0, 16),
+		DbgSourcePositions: make([]int, 0, 8),
+		DbgLocals:          make([]*DbgLocalInfo, 0, 4),
+		DbgCalls:           make([]DbgCall, 0, 8),
+		DbgUpvalues:        make([]string, 0, 4),
 
-		stringConstants: make([]string, 0, 32),
+		stringConstants: make([]string, 0, 8),
 	}
 }
 
